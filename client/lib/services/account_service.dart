@@ -6,13 +6,20 @@ class AccountService {
 
   AccountService(this._apiService);
 
-  Future<Account> createAccount(CreateAccountRequest request) async {
-    final response = await _apiService.post('/api/accounts', data: request.toJson());
+  Future<Account> createAccount(CreateAccountRequest request, int userId) async {
+    final requestData = request.toJson();
+    requestData['user_id'] = userId;
+    // Backend expects decimal as string
+    final bal = requestData['balance'];
+    if (bal is num) {
+      requestData['balance'] = bal.toString();
+    }
+    final response = await _apiService.post('/api/accounts', data: requestData);
     return Account.fromJson(response.data);
   }
 
-  Future<List<Account>> getAccounts() async {
-    final response = await _apiService.get('/api/accounts');
+  Future<List<Account>> getAccounts(int userId) async {
+    final response = await _apiService.get('/api/accounts?user_id=$userId');
     return (response.data as List).map((json) => Account.fromJson(json)).toList();
   }
 
@@ -22,7 +29,12 @@ class AccountService {
   }
 
   Future<Account> updateAccount(int id, UpdateAccountRequest request) async {
-    final response = await _apiService.patch('/api/accounts/$id', data: request.toJson());
+    final data = request.toJson();
+    final bal = data['balance'];
+    if (bal is num) {
+      data['balance'] = bal.toString();
+    }
+    final response = await _apiService.patch('/api/accounts/$id', data: data);
     return Account.fromJson(response.data);
   }
 

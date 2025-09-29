@@ -73,7 +73,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String message = '注册失败';
       final status = e.response?.statusCode;
       final data = e.response?.data;
-      final text = data is String ? data : data?.toString();
+      String? text;
+      if (data is Map && data['error'] is String) {
+        text = data['error'] as String;
+      } else {
+        text = data is String ? data : data?.toString();
+      }
       if (status == 409) {
         if (text != null && text.toLowerCase().contains('username')) {
           message = '用户名已存在';

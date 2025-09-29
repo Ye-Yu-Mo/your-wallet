@@ -4,6 +4,7 @@ pub mod accounts;
 pub mod transactions;
 pub mod assets;
 pub mod auth;
+pub mod error;
 
 use sea_orm::DatabaseConnection;
 
@@ -18,3 +19,4 @@ pub use accounts::*;
 pub use transactions::*;
 pub use assets::*;
 pub use auth::*;
+pub use error::*;

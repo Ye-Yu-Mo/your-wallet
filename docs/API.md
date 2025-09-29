@@ -2,7 +2,7 @@
 
 - 基础地址: `http://127.0.0.1:9999`
 - 前缀: `/api`
-- 认证: 无（开发期），请勿对公网暴露
+- 认证: 可选 JWT（默认关闭）。设置环境变量 `REQUIRE_AUTH=true` 可开启鉴权。
 - 请求类型: `application/json`
 - 时间格式: RFC3339（例: `2025-09-28T10:50:00Z`）
 - Decimal 字段: 建议以字符串传递（如 `"12.34"`），以避免浮点精度问题；响应中十进制可能序列化为字符串
@@ -15,6 +15,29 @@ GET `/health`
 {"status":"ok","message":"Wallet API is running","timestamp":"2025-09-28T10:50:00Z"}
 ```
 
+## 认证 Auth
+
+POST `/api/auth/login`
+- 请求体: `{ "email":"a@example.com", "password":"secret" }`
+- 200 OK → `{ "token": "<JWT>", "refresh_token": "<JWT_REFRESH>" }`
+- 400 Bad Request → `{ "error":"invalid email|password too short", "code":"invalid_request" }`
+- 401 Unauthorized → `{ "error":"invalid credentials", "code":"invalid_credentials" }`
+
+启用鉴权后（`REQUIRE_AUTH=true`）除以下端点外其余 `/api/*` 需要 Header：
+`Authorization: Bearer <JWT>`
+- 公开端点：
+  - `POST /api/users`（注册）
+  - `POST /api/auth/login`（登录）
+
+POST `/api/auth/refresh`
+- 请求体: `{ "refresh_token":"<JWT_REFRESH>" }`
+- 200 OK → `{ "token":"<JWT>", "refresh_token":"<JWT_REFRESH>" }`
+- 400 Bad Request → `{ "error":"missing refresh_token", "code":"invalid_request" }`
+- 401 Unauthorized → `{ "error":"invalid or expired refresh token", "code":"invalid_token" }`
+
+无效或缺失的凭证：
+- 401 Unauthorized → `{ "error":"missing Authorization header|invalid or expired token", "code":"missing_authorization|invalid_token" }`
+
 ## 用户 Users
 响应模型 UserOut
 - `id` i32
@@ -26,7 +49,7 @@ GET `/health`
 POST `/api/users`
 - 请求体: `{ "username":"alice", "email":"a@example.com", "password":"secret" }`
 - 201 Created → UserOut
-- 409 Conflict → 文本 `username already exists`
+- 409 Conflict → `{ "error":"username already exists|email already exists", "code":"conflict" }`
 
 GET `/api/users/{id}`
 - 200 OK → UserOut
@@ -143,7 +166,7 @@ curl -X POST http://127.0.0.1:9999/api/transactions \
 POST `/api/assets`
 - 请求体: `{ "user_id":1, "symbol":"AAPL", "name":"Apple", "quantity":"10", "avg_price":"180", "asset_type":"stock" }`
 - 201 Created → Asset
-- 可能 409（唯一约束冲突，错误文本）
+- 可能 409（唯一约束冲突）→ `{ "error": string, "code":"conflict" }`
 
 GET `/api/assets/{id}`
 - 200 OK → Asset
@@ -169,7 +192,7 @@ curl -X POST http://127.0.0.1:9999/api/assets \
 ```
 
 ## 错误处理
-- 错误响应目前为纯文本（非 JSON）。
+- 错误响应一律为 JSON：`{ "error": string, "code": string }`。
 - 常见状态码
   - 400 Bad Request: 十进制解析失败（如金额格式非法）
   - 404 Not Found: 资源不存在
@@ -192,6 +215,13 @@ curl http://127.0.0.1:9999/health
 curl -X POST http://127.0.0.1:9999/api/users \
   -H 'content-type: application/json' \
   -d '{"username":"alice","email":"a@example.com","password":"secret"}'
+# 登录获取 JWT
+curl -X POST http://127.0.0.1:9999/api/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"a@example.com","password":"secret"}'
+# 携带 Authorization 访问受保护资源（启用鉴权时）
+curl http://127.0.0.1:9999/api/accounts \
+  -H 'Authorization: Bearer <JWT>'
 # 创建账户
 curl -X POST http://127.0.0.1:9999/api/accounts \
   -H 'content-type: application/json' \
@@ -207,4 +237,3 @@ curl -X POST http://127.0.0.1:9999/api/assets \
 ```
 
 > 注意：当前无鉴权，仅用于开发联调。若用于生产，请加入 JWT 鉴权、CORS、日志与更严格的错误格式（JSON）。
-

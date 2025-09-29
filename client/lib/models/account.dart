@@ -25,7 +25,17 @@ class Account {
     required this.createdAt,
   });
 
-  factory Account.fromJson(Map<String, dynamic> json) => _$AccountFromJson(json);
+  factory Account.fromJson(Map<String, dynamic> json) {
+    return Account(
+      id: (json['id'] as num).toInt(),
+      userId: (json['user_id'] as num).toInt(),
+      name: json['name'] as String,
+      accountType: json['account_type'] as String,
+      balance: _doubleFromJson(json['balance']),
+      currency: json['currency'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
   Map<String, dynamic> toJson() => _$AccountToJson(this);
 }
 
@@ -65,4 +75,10 @@ class UpdateAccountRequest {
 
   factory UpdateAccountRequest.fromJson(Map<String, dynamic> json) => _$UpdateAccountRequestFromJson(json);
   Map<String, dynamic> toJson() => _$UpdateAccountRequestToJson(this);
+}
+
+double _doubleFromJson(dynamic v) {
+  if (v is num) return v.toDouble();
+  if (v is String) return double.tryParse(v) ?? 0.0;
+  return 0.0;
 }

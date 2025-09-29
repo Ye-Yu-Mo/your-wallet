@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import '../providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -35,6 +36,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         context.go('/home');
+      }
+    } on DioException catch (e) {
+      String message = '登录失败';
+      final data = e.response?.data;
+      if (data is Map && data['error'] is String) {
+        message = data['error'] as String;
+      } else if (e.message != null) {
+        message = e.message!;
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

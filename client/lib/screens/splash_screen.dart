@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import 'package:go_router/go_router.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -28,10 +30,9 @@ class _SplashScreenState extends State<SplashScreen> {
       final res = await AppServices.I.api.health();
       if (mounted) {
         if (res['status'] == 'ok') {
-          // Health check passed, now check authentication
-          await Future.delayed(const Duration(milliseconds: 500));
-          // Since we don't have real auth yet, always go to login
-          context.go('/login');
+          await Future.delayed(const Duration(milliseconds: 300));
+          final authed = context.read<AuthProvider>().isAuthenticated;
+          context.go(authed ? '/home' : '/login');
         } else {
           setState(() => _error = '后端健康检查失败: ${res.toString()}');
         }
@@ -75,4 +76,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-

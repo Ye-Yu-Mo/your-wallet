@@ -4,6 +4,8 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/add_account_screen.dart';
+import 'router_singleton.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/',
@@ -28,6 +30,15 @@ final GoRouter appRouter = GoRouter(
       name: 'home',
       pageBuilder: (context, state) => const MaterialPage(child: HomeScreen()),
     ),
+    GoRoute(
+      path: '/add-account',
+      name: 'add-account',
+      pageBuilder: (context, state) => const MaterialPage(child: AddAccountScreen()),
+    ),
   ],
 );
 
+// expose globally for non-UI layers (e.g., providers)
+// ignore: unnecessary_statements
+void _initGlobalRouter() { globalRouter = appRouter; }
+final _ = _initGlobalRouter();
